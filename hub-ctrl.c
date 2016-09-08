@@ -8,9 +8,6 @@
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
-#define ANSI_COLOR_BLUE    "\x1b[34m"
-#define ANSI_COLOR_MAGENTA "\x1b[35m"
-#define ANSI_COLOR_CYAN    "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
 #define USB_RT_HUB              (USB_TYPE_CLASS | USB_RECIP_DEVICE)
@@ -25,14 +22,7 @@
 
 #define MAX_HUBS 128
 
-
-static void exit_with_usage (const char *progname) {
-  printf ("Usage: %s [-H <Hub> | -B <Bus> -D <Dev>] [-P Port] -p [0|1]\n", progname);
-  exit (1);
-}
-
-
-struct usb_hub_descriptor {
+struct hub_metadata {
   unsigned char bDescLength;
   unsigned char bDescriptorType;
   unsigned char bNbrPorts;
@@ -50,7 +40,12 @@ struct hub_info {
 };
 
 static struct hub_info hubs[MAX_HUBS];
-static int num_of_hub = 0;
+static int hub_count = 0;
+
+static void exit_with_usage (const char *progname) {
+  printf ("Usage: %s [-H <Hub> | -B <Bus> -D <Dev>] -P <Port> -p <0|1>\n", progname);
+  exit (1);
+}
 
 static void list_ports (usb_dev_handle *uh, int port_count) {
   for (int i = 1; i <= port_count; i++) {
@@ -103,10 +98,10 @@ static void list_hubs (int port) {
           char buf[1024];
           if (port == 0) {
             int len;
-            struct usb_hub_descriptor *uhd = (struct usb_hub_descriptor *)buf;
-            if ((len = usb_control_msg (uh, USB_DIR_IN | USB_RT_HUB, USB_REQ_GET_DESCRIPTOR, USB_DT_HUB << 8, 0, buf, sizeof (buf), CTRL_TIMEOUT)) > sizeof (struct usb_hub_descriptor)) {
-              printf ("Hub %d (Bus %d, Dev %d) ", num_of_hub, atoi(bus->dirname), dev->devnum);
-              switch ((uhd->wHubCharacteristics[0] & HUB_CHAR_LPSM)) {
+            struct hub_metadata *hub_data = (struct hub_metadata *)buf;
+            if ((len = usb_control_msg (uh, USB_DIR_IN | USB_RT_HUB, USB_REQ_GET_DESCRIPTOR, USB_DT_HUB << 8, 0, buf, sizeof (buf), CTRL_TIMEOUT)) > sizeof (struct hub_metadata)) {
+              printf ("Hub %d (Bus %d, Dev %d) ", hub_count, atoi(bus->dirname), dev->devnum);
+              switch ((hub_data->wHubCharacteristics[0] & HUB_CHAR_LPSM)) {
                 case 0:
                   printf (ANSI_COLOR_YELLOW "- ganged power switching\n");
                   break;
@@ -127,33 +122,32 @@ static void list_hubs (int port) {
           }
 
           int port_count = buf[2];
-          hubs[num_of_hub].busnum = atoi(bus->dirname);
-          hubs[num_of_hub].devnum = dev->devnum;
-          hubs[num_of_hub].dev = dev;
-          hubs[num_of_hub].port_count = port_count;
+          hubs[hub_count].busnum = atoi(bus->dirname);
+          hubs[hub_count].devnum = dev->devnum;
+          hubs[hub_count].dev = dev;
+          hubs[hub_count].port_count = port_count;
 
-          num_of_hub++;
+          hub_count++;
           list_ports (uh, port_count); // print port status
           usb_close (uh);
       }
     }
   }
 
-  if (num_of_hub == 0) {
+  if (hub_count == 0) {
     printf (ANSI_COLOR_RED "> No hub found.\n" ANSI_COLOR_RESET);
     exit(1);
   }
 }
 
 int get_hub (int busnum, int devnum) {
-  for (int i = 0; i < num_of_hub; i++) {
+  for (int i = 0; i < hub_count; i++) {
     if (hubs[i].busnum == busnum && hubs[i].devnum == devnum) {
       return i;
     }
   }
   return -1;
 }
-
 
 int main (int argc, const char *argv[]) {
   int busnum = 0;
@@ -213,7 +207,7 @@ int main (int argc, const char *argv[]) {
     hub = get_hub(busnum, devnum);
   }
 
-  if (hub >= 0 && hub < num_of_hub) {// valid hub number
+  if (hub >= 0 && hub < hub_count) {// valid hub number
     uh = usb_open (hubs[hub].dev);
   }
 
