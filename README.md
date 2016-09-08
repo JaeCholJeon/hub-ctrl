@@ -1,80 +1,77 @@
-hub-ctrl.c
+Credit
+======
+Originally created by NIIBE Yutaka and published to Github by Joel Dare on 31 Jan 2013.
+
+I forked the code and stated editing as of 8 Sep 2016
+
+
+Dependency
 ==========
-
-Control USB power on a port by port basis on some USB hubs.
-
-Originally created NIIBE Yutaka and published to Github by Joel Dare on January
-31st, 2013.
-
-This only works on USB hubs that have the hardware necessary to allow
-software controlled power switching. Most hubs DO NOT include the hardware.
-
-Prerequisites
-=============
-
-Before compiling it, you'll need to install libusb-dev (under Ubuntu). I
-installed that with the following command.
+For Ubuntu:
 
     sudo apt-get install libusb-dev
 
-You'll also need the GCC tool chain.
+Plus the GCC tool chain.
+
 
 Compiling
 =========
-
 To compile the hub-ctrl.c program run the following compile command.
 
-    gcc -o hub-ctrl hub-ctrl.c -lusb
+    gcc -o hub-ctrl hub-ctrl.c -lusb -std=c99
 
-That results in an executable binary called hub-ctrl.
+That results in an executable binary called `hub-ctrl`.
 
-Controlling Power
-=================
 
-You can control the power on a port using the following command.
+Usage
+=====
 
-    sudo ./hub-ctrl -h 3 -P 1 -p 0
+List hubs and ports:
 
-That says to control hub 3 (-h 3) port 1 (-P 1) and to turn the power
-off (-p 0). You can also use ”-p 1” to turn the power back on.
+    $ sudo ./hub-ctrl
+    Hub 0 (Bus 1, Dev 4) - ganged power switching
+     ├─ Port  1:  power
+     ├─ Port  2:  power
+     ├─ Port  3:  power connect enable
+     ├─ Port  4:  power
+     ├─ Port  5:  power highspeed connect enable
+     ├─ Port  6:  power
+     └─ Port  7:  power
+    Hub 1 (Bus 1, Dev 2) - individual power switching
+     ├─ Port  1:  power highspeed connect enable
+     ├─ Port  2: 
+     ├─ Port  3:  power highspeed connect enable
+     ├─ Port  4:  power
+     └─ Port  5:  power
+    Hub 2 (Bus 1, Dev 1) - ganged power switching
+     └─ Port  1:  power highspeed connect enable
 
-You can also specify the USB device based on the BUS and DEV numbers. Use the
-following command the list the currently connected devices. It's useful to run
-this with the device disconnected and then again with the device connected so
-that you can tell which device is the one you are trying to target (the Targus
-in my case).
 
-    lsusb
+Note [`H`ub number] or [`B`us number plus `D`evice number] and `P`ort number of your target port/device. To control its power:
 
-Now that we know the BUS and DEV numbers, we can control the power using those
-numbers as well. Here's the command for that.
+    # use hub and port number to locate device/port
+    #   -p 0 = off; 1 = on
+    $ sudo ./hub-ctrl -H 0 -P 3 -p 0
 
-    sudo ./hub-ctrl -b 001 -d 005 -P1 -p 0
+or
 
-This time we are controlling the device on BUS 001 (-b 001) device 005 (-d 005)
-port 1 (-P 1) and turning the power off (-p 0).
+    # use bus, device and port number to locate device/port
+    $ sudo ./hub-ctrl -B 1 -D 4 -P 3 -p 0
 
-Hubs Known to Work
-==================
+A useful command to get more information of USB devices including hierarchy of chained USB hubs is:
 
-The following is a list of Hubs that are known to have the hardware necessary
-to allow power switching.
+    $ lsusb -t
+    /:  Bus 01.Port 1: Dev 1, Class=root_hub, Driver=dwc_otg/1p, 480M
+        |__ Port 1: Dev 2, If 0, Class=Hub, Driver=hub/5p, 480M
+            |__ Port 1: Dev 3, If 0, Class=Vendor Specific Class, Driver=smsc95xx, 480M
+            |__ Port 3: Dev 4, If 0, Class=Hub, Driver=hub/7p, 480M
+                |__ Port 3: Dev 25, If 0, Class=Human Interface Device, Driver=usbhid, 12M
+                |__ Port 3: Dev 25, If 1, Class=Human Interface Device, Driver=usbhid, 12M
+                |__ Port 5: Dev 6, If 0, Class=Mass Storage, Driver=usb-storage, 480M
 
-  - D-Link-DUB-H7-High-Speed-7-Port (Tested with old Silver versions (A3, A4 & A5). Also tested with newer Black version C1).
-  - Elecom: U2H-G4S
-  - Sanwa Supply: USB-HUB14GPH
-  - Targus, Inc.: PAUH212
-  - Hawking Technology: UH214
-  - B&B Electronics: UHR204
-  - Belkin: F5U701
-  - Linksys: USB2HUB4
 
-Original Copyright
-==================
+Known Issues
+============
 
-Copyright (C) 2006 Free Software Initiative of Japan
-
-Author: NIIBE Yutaka  <gniibe at fsij.org>
-
-This file can be distributed under the terms and conditions of the GNU General
-Public License version 2 (or later).
+- No validation of command-line arguments
+- Some USB ports turn back on automatically after being turned off.
