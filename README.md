@@ -72,6 +72,10 @@ A useful command to get more information of USB devices including hierarchy of c
 
 Known Issues
 ============
-
 - No validation of command-line arguments
 - Some USB ports turn back on automatically after being turned off.
+
+
+TODO
+====
+- Add device description/type in port status lines. This is particularly useful in identifying chained hubs so you don't accidentally turn off an entire hub by powering off the port that it connects to. See above output of `lsusb -t` for an example - turning off bus 1 port 3 dev 4 will kill the 7-port hub.
