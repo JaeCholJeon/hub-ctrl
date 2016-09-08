@@ -78,4 +78,4 @@ Known Issues
 
 TODO
 ====
-- Add device description/type in port status lines. This is particularly useful in identifying chained hubs so you don't accidentally turn off an entire hub by powering off the port that it connects to. See above output of `lsusb -t` for an example - turning off bus 1 port 3 dev 4 will kill the 7-port hub.
+- Add device description/type in port status lines. This is particularly useful in identifying chained hubs so you don't accidentally turn off an entire hub by powering off the port that it connects to. See above output of `lsusb -t` for an example - turning off bus 1 port 3 dev 4 will kill the 7-port hub. This relationship isn't clear in the output of `sudo ./hub-ctrl`.
