@@ -26,7 +26,7 @@ That results in an executable binary called `hub-ctrl`.
 Usage
 =====
 
-List hubs and ports:
+List hubs and ports (colour-coded in actual use):
 
     $ sudo ./hub-ctrl
     Hub 0 (Bus 1, Dev 4) - ganged power switching
